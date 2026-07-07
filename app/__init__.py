@@ -1,0 +1,1 @@
+"""Shop tracking application package."""

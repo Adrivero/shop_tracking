@@ -1,0 +1,9 @@
+MERCADONA
+07/07/2026
+
+PAN INTEGRAL        1,25
+LECHE ENTERA        0,95
+MANZANAS            2,40
+DESCUENTO          -0,30
+
+TOTAL               4,30
