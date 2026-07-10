@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Bulk scan result · Shop Tracking{% endblock %}
+{% block content %}
+{% set successes = results|selectattr("error", "none")|list %}
+{% set failures = results|rejectattr("error", "none")|list %}
+{% set duplicates = successes|selectattr("saved.was_duplicate")|list %}
+<section class="page-heading heading-row reveal">
+  <div><p class="eyebrow">Bulk scan complete</p><h1>Tickets <span>processed.</span></h1><p class="lead">{{ successes|length }} read · {{ failures|length }} failed · {{ duplicates|length }} duplicate{{ '' if duplicates|length == 1 else 's' }}</p></div>
+  <div class="heading-actions"><a class="button button-secondary" href="{{ url_for('scan') }}">Scan more</a><a class="button button-primary" href="{{ url_for('receipts') }}">Open receipts</a></div>
+</section>
+
+<section class="scan-summary reveal reveal-delay-1">
+  <article><span>Files</span><strong>{{ results|length }}</strong></article>
+  <article><span>Read</span><strong>{{ successes|length }}</strong></article>
+  <article><span>Failed</span><strong>{{ failures|length }}</strong></article>
+  <article class="accent"><span>Saved</span><strong>{{ successes|selectattr("saved")|rejectattr("saved.was_duplicate")|list|length if save else 0 }}</strong></article>
+</section>
+
+<section class="panel table-panel reveal reveal-delay-2">
+  <div class="panel-heading"><div><p class="eyebrow">Batch details</p><h2>Each ticket result</h2></div></div>
+  <div class="responsive-table"><table><thead><tr><th>File</th><th>Status</th><th>Store</th><th>Date</th><th>Total</th><th>Image</th></tr></thead><tbody>
+  {% for result in results %}
+    {% if result.error %}
+      <tr><td><strong>{{ result.filename }}</strong></td><td>{{ result.error }}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    {% else %}
+      <tr>
+        <td><strong>{{ result.filename }}</strong></td>
+        <td>{% if result.saved %}{% if result.saved.was_duplicate|default(false) %}Already saved #{{ result.saved.id }}{% else %}Saved #{{ result.saved.id }}{% endif %}{% else %}Preview only{% endif %}</td>
+        <td>{{ result.parsed.store_name or 'Unknown' }}</td>
+        <td>{{ result.parsed.receipt_date or 'Unknown' }}</td>
+        <td>{{ result.parsed.total|currency }}</td>
+        <td><code>data/raw/{{ result.archived_filename }}</code></td>
+      </tr>
+    {% endif %}
+  {% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

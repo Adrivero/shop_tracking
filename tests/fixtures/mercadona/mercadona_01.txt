@@ -1,0 +1,42 @@
+MERCADONA S.A.
+TAX-ID EXAMPLE
+AVDA. EXAMPLE, 1
+00000 EXAMPLE
+TELEFONO: 000000000
+25/06/2026 10:01 OP:0000000
+FACTURA SIMPLIFICADA: 0000-000-000000
+
+Descripción              P. Unit     Imp.(€)
+1 PAN M. 100% INTEGRAL               0,90
+1 TORTILLA PAT C/CEB                 2,60
+1 BEBIDA AVENA CHOCO                 7,50
+1 PIPA GIGANTE AGUASAL               1,10
+1 P. TUBO SOUR CREAM                 1,65
+1 GAZPACHO TRADICIONAL               1,60
+1 P. PAY RED. SAL BIPA               3,95
+1 SANDÍA PARTIDA B/S                 3,38
+1 BARRA CAMPESINA                    0,65
+1 NUEZ NATURAL                       2,50
+2 CEREAL RELLENO S/G      2,25       4,50
+3 PAN M. BLANCO S/GLU     2,74       8,22
+2 MAYONESA BOCA ABAJO     1,40       2,80
+1 COCKTAIL TOSTADO SAL               2,65
+3 TORTITA CAMPESTRE       1,75       5,25
+1 NACHOS                             0,90
+1 SOLOMILLO POLLO S/G                4,47
+1 SOLOMILLO POLLO S/G                4,75
+1 CORAZONES COGOLLO                  2,00
+1 FRESA                              2,86
+1 12 HUEVOS SUPER GRAN               4,30
+1 CEREZA                             3,05
+1 + PROTEINA ARANDANOS               1,55
+1 +PROTEINAS COCO                    1,55
+1 AGUACATE
+0,268 kg        5,00 €/kg            1,34
+1 PLATANO
+1,056 kg        2,90 €/kg            3,06
+1 PARAGUAYO
+0,560 kg        3,50 €/kg            1,96
+
+TOTAL (€)                           81,04
+TARJETA BANCARIA                    81,04

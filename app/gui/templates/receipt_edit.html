@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Edit receipt #{{ receipt.id }} · Shop Tracking{% endblock %}
+{% block content %}
+<a class="back-link reveal" href="{{ url_for('receipt_detail', receipt_id=receipt.id) }}">← Cancel and return</a>
+<section class="page-heading heading-row reveal">
+  <div>
+    <p class="eyebrow">Manual correction · Receipt #{{ '%04d'|format(receipt.id) }}</p>
+    <h1>Edit receipt <span>data.</span></h1>
+    <p class="lead">Correct OCR mistakes, adjust totals, or add and remove product lines. Changes update dashboard statistics immediately.</p>
+  </div>
+</section>
+
+<form class="editor-form" method="post">
+  {% if error %}<div class="error-banner reveal"><span>!</span><div><strong>Review your changes</strong><p>{{ error }}</p></div></div>{% endif %}
+
+  <section class="panel editor-section reveal reveal-delay-1">
+    <div class="panel-heading"><div><p class="eyebrow">Receipt details</p><h2>Purchase information</h2></div></div>
+    <div class="field-grid">
+      <label class="field field-wide"><span>Store name</span><input name="store_name" value="{{ editor.store_name }}" placeholder="Store name" maxlength="255"></label>
+      <label class="field"><span>Purchase date and time</span><input type="datetime-local" name="purchased_at" value="{{ editor.purchased_at }}"></label>
+      <label class="field"><span>Receipt total (€)</span><input name="total" value="{{ editor.total }}" inputmode="decimal" placeholder="0.00"></label>
+    </div>
+  </section>
+
+  <section class="panel editor-section reveal reveal-delay-2">
+    <div class="panel-heading editor-heading">
+      <div><p class="eyebrow">Basket contents</p><h2>Product lines</h2></div>
+      <button class="button button-secondary" type="button" data-add-item>＋ Add product</button>
+    </div>
+    <div class="editor-items" data-editor-items>
+      {% for item in editor['items'] %}
+      <div class="editor-item" data-item-row>
+        <div class="editor-item-top"><span class="item-index">{{ '%02d'|format(loop.index) }}</span><strong>Product</strong><button type="button" class="remove-item" data-remove-item aria-label="Remove product">×</button></div>
+        <div class="item-field-grid">
+          <label class="field item-name"><span>Name</span><input name="item_name" value="{{ item.product_name }}" maxlength="500" required></label>
+          <label class="field"><span>Quantity</span><input name="item_quantity" value="{{ item.quantity }}" inputmode="decimal" required></label>
+          <label class="field"><span>Unit price (€)</span><input name="item_unit_price" value="{{ item.unit_price if item.unit_price is not none else '' }}" inputmode="decimal"></label>
+          <label class="field"><span>Weight (kg)</span><input name="item_weight_kg" value="{{ item.weight_kg if item.weight_kg is not none else '' }}" inputmode="decimal"></label>
+          <label class="field"><span>Price / kg (€)</span><input name="item_price_per_kg" value="{{ item.price_per_kg if item.price_per_kg is not none else '' }}" inputmode="decimal"></label>
+          <label class="field"><span>Line total (€)</span><input name="item_line_total" value="{{ item.line_total }}" inputmode="decimal" required></label>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="editor-actions reveal reveal-delay-3">
+    <span><i class="status-dot"></i> Saved locally in one database transaction</span>
+    <div><a class="button button-secondary" href="{{ url_for('receipt_detail', receipt_id=receipt.id) }}">Cancel</a><button class="button button-primary" type="submit">Save changes</button></div>
+  </div>
+</form>
+
+<template id="item-row-template">
+  <div class="editor-item" data-item-row>
+    <div class="editor-item-top"><span class="item-index"></span><strong>Product</strong><button type="button" class="remove-item" data-remove-item aria-label="Remove product">×</button></div>
+    <div class="item-field-grid">
+      <label class="field item-name"><span>Name</span><input name="item_name" maxlength="500" required></label>
+      <label class="field"><span>Quantity</span><input name="item_quantity" value="1" inputmode="decimal" required></label>
+      <label class="field"><span>Unit price (€)</span><input name="item_unit_price" inputmode="decimal"></label>
+      <label class="field"><span>Weight (kg)</span><input name="item_weight_kg" inputmode="decimal"></label>
+      <label class="field"><span>Price / kg (€)</span><input name="item_price_per_kg" inputmode="decimal"></label>
+      <label class="field"><span>Line total (€)</span><input name="item_line_total" inputmode="decimal" required></label>
+    </div>
+  </div>
+</template>
+{% endblock %}

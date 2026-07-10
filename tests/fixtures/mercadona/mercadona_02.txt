@@ -1,0 +1,44 @@
+MERCADONA S.A.
+TAX-ID EXAMPLE
+AVDA. EXAMPLE, 2
+00000 EXAMPLE
+TELEFONO: 000000000
+02/07/2026 18:35 OP:0000000
+FACTURA SIMPLIFICADA: 0000-000-000000
+
+Descripción                 P. Unit  Imp.(€)
+1 MAIZ DULCE PACK-3                    1,55
+1 JUDIA PLANA 750 GR                   2,95
+1 CEREZA 1 KG                          5,81
+1 CALABAZA PARTIDA                     2,70
+1 CALABAZA PARTIDA                     2,06
+1 DATIL SIN HUESO                      1,65
+2 JAMON S. EXTRA FINO         2,45     4,90
+1 SANDIA PARTIDA B/S                   3,43
+1 DELICIAS MAR                         2,00
+1 ACEITE VIRGEN                        4,30
+2 PAN DE FIBRA                1,13     2,26
+1 MERMELADA MELOCOTON                  1,50
+2 NUEZ NATURAL                2,50     5,00
+2 TORTITA CAMPESTRE           1,75     3,50
+1 BURGER M VA/CE 1000G                 8,00
+2 PAN M. BLANCO S/GLU         2,74     5,48
+1 VELA CIFRA 1                         1,25
+1 VELA CIFRA 9                         1,25
+1 KEFIR                                3,10
+1 HIGIENICO DOBLE ROLL                 2,35
+1 ENSALADILLA RUSA                     2,80
+1 TARTA 3 CHOCOLATES                   7,50
+1 + PROTEINA ARANDANOS                 1,55
+1 ROLLO COCINA JUMBO                   3,70
+1 PLATANO
+1,080 kg                      2,90 €/kg 3,13
+
+TOTAL (€)                            83,72
+TARJETA BANCARIA                       83,72
+
+IVA    BASE IMPONIBLE (€)    CUOTA (€)
+4%             39,83              1,59
+10%            30,68              3,07
+21%             7,07              1,48
+TOTAL          77,58              6,14

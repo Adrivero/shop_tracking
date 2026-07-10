@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Receipt #{{ receipt.id }} · Shop Tracking{% endblock %}
+{% block content %}
+<a class="back-link reveal" href="{{ url_for('receipts') }}">← Back to receipts</a>
+{% if updated %}<div class="success-banner reveal"><span>✓</span><div><strong>Receipt updated</strong><p>Your corrections are already reflected in the statistics.</p></div></div>{% endif %}
+<section class="receipt-hero reveal">
+  <div><p class="eyebrow">Receipt #{{ '%04d'|format(receipt.id) }}</p><h1>{{ receipt.store_name or 'Unknown store' }}</h1><p class="lead">{{ receipt.purchased_at.strftime('%A, %d %B %Y at %H:%M') if receipt.purchased_at else 'Purchase date not recognized' }}</p></div>
+  <div class="receipt-hero-side">
+    <div class="receipt-total"><span>Total paid</span><strong>{{ receipt.total|currency }}</strong></div>
+    <div class="receipt-actions"><a class="button button-secondary" href="{{ url_for('receipt_edit', receipt_id=receipt.id) }}">✎ Edit</a><button class="button button-danger" type="button" data-dialog-open="delete-receipt">Delete</button></div>
+  </div>
+</section>
+<section class="panel table-panel reveal reveal-delay-1">
+  <div class="panel-heading"><div><p class="eyebrow">Basket contents</p><h2>{{ receipt.items|length }} product lines</h2></div></div>
+  <div class="responsive-table">
+    <table>
+      <thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Weight</th><th>Price / kg</th><th>Line total</th></tr></thead>
+      <tbody>
+      {% for item in receipt.items %}
+      <tr>
+        <td><div class="product-cell"><span>{{ item.product_name[:1]|upper }}</span><strong>{{ item.product_name }}</strong></div></td>
+        <td>{{ item.quantity|quantity }}</td><td>{{ item.unit_price|currency if item.unit_price is not none else '—' }}</td>
+        <td>{{ (item.weight_kg|quantity ~ ' kg') if item.weight_kg is not none else '—' }}</td>
+        <td>{{ item.price_per_kg|currency if item.price_per_kg is not none else '—' }}</td><td><strong>{{ item.line_total|currency }}</strong></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<dialog class="confirm-dialog" id="delete-receipt">
+  <div class="dialog-icon">!</div>
+  <h2>Delete this receipt?</h2>
+  <p>This permanently removes <strong>{{ receipt.store_name or 'receipt #' ~ receipt.id }}</strong> and all {{ receipt.items|length }} product lines. Statistics will be recalculated.</p>
+  <div class="dialog-actions"><button class="button button-secondary" type="button" data-dialog-close>Keep receipt</button><form method="post" action="{{ url_for('receipt_delete', receipt_id=receipt.id) }}"><button class="button button-danger-solid" type="submit">Delete permanently</button></form></div>
+</dialog>
+{% endblock %}

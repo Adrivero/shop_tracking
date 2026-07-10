@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Receipts · Shop Tracking{% endblock %}
+{% block content %}
+<section class="page-heading heading-row reveal">
+  <div><p class="eyebrow">Purchase archive</p><h1>Every trip, <span>one timeline.</span></h1><p class="lead">Open any receipt to inspect its products, quantities, and totals.</p></div>
+  <a class="button button-primary" href="{{ url_for('scan') }}">＋ Add receipt</a>
+</section>
+
+{% if request.args.get('deleted') == '1' %}<div class="success-banner reveal"><span>✓</span><div><strong>Receipt deleted</strong><p>The receipt and its product lines were removed from the database.</p></div></div>{% endif %}
+
+{% if receipts %}
+<section class="receipt-cards reveal reveal-delay-1">
+  {% for receipt in receipts %}
+  <a class="receipt-card" href="{{ url_for('receipt_detail', receipt_id=receipt.id) }}">
+    <div class="receipt-card-top"><span class="store-avatar">{{ (receipt.store_name or '?')[:1]|upper }}</span><span class="receipt-id">#{{ '%04d'|format(receipt.id) }}</span></div>
+    <div><p>{{ receipt.purchased_at.strftime('%A, %d %B %Y') if receipt.purchased_at else 'Date not recognized' }}</p><h2>{{ receipt.store_name or 'Unknown store' }}</h2></div>
+    <div class="receipt-card-bottom"><span>{{ receipt.items|length }} product lines</span><strong>{{ receipt.total|currency }}</strong></div>
+  </a>
+  {% endfor %}
+</section>
+{% else %}
+<section class="panel empty-state hero-empty reveal"><span>≡</span><h2>Your receipt archive is empty</h2><p>Scan your first image and save the result to begin.</p><a class="button button-primary" href="{{ url_for('scan') }}">Scan first receipt</a></section>
+{% endif %}
+{% endblock %}

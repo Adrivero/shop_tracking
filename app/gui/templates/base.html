@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d1110">
+  <title>{% block title %}Shop Tracking{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="{{ url_for('overview') }}" aria-label="Shop Tracking home">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7Zm3-1a3 3 0 0 1 6 0"/></svg>
+        </span>
+        <span><strong>Shop</strong><small>tracking</small></span>
+      </a>
+
+      <nav class="nav" aria-label="Main navigation">
+        <p class="nav-label">Workspace</p>
+        <a class="nav-link {{ 'active' if request.endpoint == 'overview' }}" href="{{ url_for('overview') }}">
+          <span class="nav-icon">⌂</span><span>Overview</span>
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'products' }}" href="{{ url_for('products') }}">
+          <span class="nav-icon">◇</span><span>Products</span>
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint in ('receipts', 'receipt_detail') }}" href="{{ url_for('receipts') }}">
+          <span class="nav-icon">≡</span><span>Receipts</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="local-badge"><span class="status-dot"></span><span><strong>Local mode</strong><small>Your data stays here</small></span></div>
+        <a class="button button-primary button-full" href="{{ url_for('scan') }}"><span>＋</span> Scan receipt</a>
+        <form class="shutdown-form" method="post" action="{{ url_for('shutdown') }}">
+          <button class="button button-danger button-full" type="submit"><span>⏻</span> Stop app</button>
+        </form>
+      </div>
+    </aside>
+
+    <div class="page-column">
+      <header class="topbar">
+        <button class="icon-button menu-button" type="button" data-menu aria-label="Open menu">☰</button>
+        <div class="topbar-title"><span class="status-dot"></span> Dashboard is running locally</div>
+        <div class="topbar-actions">
+          <span class="today" data-today></span>
+          <a class="icon-button" href="{{ url_for('scan') }}" aria-label="Scan a receipt">＋</a>
+        </div>
+      </header>
+      <main class="content">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  <div class="sidebar-scrim" data-menu-close></div>
+</body>
+</html>

@@ -1,0 +1,28 @@
+ALIMERKA
+ALIMERKA, S.A.U. TAX-ID EXAMPLE
+EXAMPLE STREET, 1 - EXAMPLE
+Av. Example, 1 - EXAMPLE
+
+Producto                          Importe
+BOLSA PEQ 70% REC                    0,07
+CERVEZA DAMM                         0,78
+CHOC. VALOR NEGRO 70%                4,99
+COCA COLA ZERO                       1,50
+PAN FORNO SCHAR 300G                 2,69
+PIMIENTOS ASAD. IBSA                 4,19
+
+TOTAL                               14,22 EUR
+EFECTIVO                            15,00 EUR
+CAMBIO                              -0,78 EUR
+
+IVA       BASE       CUOTA
+21%       1,94        0,41
+10%       8,25        0,83
+4%        2,59        0,10
+
+Tienda: 0500
+Fecha: 01/07/2026
+Hora: 13:37:23
+TP: 0002
+TICKET: 0000
+FRA. SIMPLIF.: 0000-00-00000000

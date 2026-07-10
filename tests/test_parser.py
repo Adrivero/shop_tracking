@@ -1,27 +1,40 @@
 from pathlib import Path
 
-from app.parser import parse_receipt_text
+from app.tools.parser import parse_receipt_text
 
 
-def test_parse_receipt_text_extracts_basic_receipt_data():
-    text = Path("tests/fixtures/receipt_01.txt").read_text(encoding="utf-8")
+def test_parse_receipt_text_extracts_time_after_a_label():
+    text = """ALIMERKA
+    BOLSA PEQ 70% REC       0,07 N
+    CERVEZA DAMM            0,78 N
+    TOTAL.                  0,85 EUR
+    Tienda:0500 Fecha:01/07/2026 Hora: 13:37:23
+    """
 
     receipt = parse_receipt_text(text)
 
-    assert receipt.store_name == "MERCADONA"
-    assert receipt.receipt_date == "07/07/2026"
-    assert receipt.total == 4.30
+    assert receipt.store_name == "ALIMERKA"
+    assert receipt.receipt_date == "01/07/2026"
+    assert receipt.receipt_time == "13:37:23"
+    assert receipt.total == 0.85
+    assert [item.product_name for item in receipt.items] == [
+        "BOLSA PEQ 70% REC",
+        "CERVEZA DAMM",
+    ]
 
-    assert len(receipt.items) == 4
 
-    assert receipt.items[0].product_name == "PAN INTEGRAL"
-    assert receipt.items[0].price == 1.25
+def test_payment_total_wins_over_the_vat_base_total():
+    text = """MERCADONA S.A.
+    25/06/2026 10:01
+    PAN INTEGRAL 1,25
+    TARJETA BANCARIA 81,04
+    IVA BASE IMPONIBLE (€) CUOTA (€)
+    4% 35,88 1,44
+    10% 39,75 3,97
+    TOTAL 75,63 5,41
+    """
 
-    assert receipt.items[1].product_name == "LECHE ENTERA"
-    assert receipt.items[1].price == 0.95
+    receipt = parse_receipt_text(text)
 
-    assert receipt.items[2].product_name == "MANZANAS"
-    assert receipt.items[2].price == 2.40
-
-    assert receipt.items[3].product_name == "DESCUENTO"
-    assert receipt.items[3].price == -0.30
+    assert receipt.total == 81.04
+    assert len(receipt.items) == 1

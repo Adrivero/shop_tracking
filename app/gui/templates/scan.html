@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Scan receipt · Shop Tracking{% endblock %}
+{% block content %}
+<section class="page-heading centered reveal"><p class="eyebrow">OCR workspace</p><h1>Turn paper into <span>insight.</span></h1><p class="lead">Choose one receipt photo, or drag in a batch of tickets. Processing happens entirely on this computer.</p></section>
+
+<form class="upload-panel reveal reveal-delay-1" method="post" enctype="multipart/form-data">
+  {% if error %}<div class="error-banner"><span>!</span><div><strong>Couldn’t scan that image</strong><p>{{ error }}</p></div></div>{% endif %}
+  <label class="drop-zone" data-drop-zone>
+    <input type="file" name="receipt" accept="image/jpeg,image/png,image/webp,image/tiff" required multiple data-file-input>
+    <span class="upload-icon">↥</span>
+    <strong>Drop your receipts here</strong>
+    <p>or click to browse your files in bulk</p>
+    <small>JPG, PNG, WEBP or TIFF · up to 20 MB</small>
+    <span class="selected-file" data-file-name></span>
+  </label>
+  <div class="save-choice">
+    <div><strong>Save to your database</strong><small>Turn this on to include the receipt in all statistics.</small></div>
+    <label class="switch"><input type="checkbox" name="save" value="yes" checked><span></span></label>
+  </div>
+  <button class="button button-primary button-large" type="submit"><span>✦</span> Scan receipt</button>
+  <p class="privacy-note"><span class="status-dot"></span> Image processing stays local, and scanned images are archived in <code>data/raw/</code>.</p>
+</form>
+{% endblock %}

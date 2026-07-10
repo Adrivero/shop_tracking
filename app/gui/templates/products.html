@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Products · Shop Tracking{% endblock %}
+{% block content %}
+<section class="page-heading heading-row reveal">
+  <div><p class="eyebrow">Product intelligence</p><h1>What you <span>actually buy.</span></h1><p class="lead">Compare frequency, quantities, and lifetime spend for every recognized product.</p></div>
+</section>
+
+<section class="mini-stat-grid reveal reveal-delay-1">
+  <article><span>Unique products</span><strong>{{ stats.unique_products }}</strong></article>
+  <article><span>Total product lines</span><strong>{{ stats.item_count }}</strong></article>
+  <article><span>Top product</span><strong class="small-value">{{ stats.products[0].name if stats.products else '—' }}</strong></article>
+</section>
+
+<section class="panel table-panel reveal reveal-delay-2">
+  <div class="table-tools">
+    <form class="search-form" method="get">
+      <label><span>⌕</span><input name="q" value="{{ query }}" placeholder="Search products…" aria-label="Search products"></label>
+      <select name="sort" aria-label="Sort products" onchange="this.form.submit()">
+        <option value="spend" {{ 'selected' if sort == 'spend' }}>Highest spend</option>
+        <option value="purchases" {{ 'selected' if sort == 'purchases' }}>Most purchased</option>
+        <option value="quantity" {{ 'selected' if sort == 'quantity' }}>Highest quantity</option>
+        <option value="recent" {{ 'selected' if sort == 'recent' }}>Most recent</option>
+        <option value="name" {{ 'selected' if sort == 'name' }}>Product name</option>
+      </select>
+    </form>
+    <span class="result-count">{{ products|length }} results</span>
+  </div>
+  {% if products %}
+  <div class="responsive-table">
+    <table>
+      <thead><tr><th>Product</th><th>Purchases</th><th>Quantity</th><th>Avg. line</th><th>Total spend</th><th>Last seen</th></tr></thead>
+      <tbody>
+      {% for product in products %}
+        <tr>
+          <td><div class="product-cell"><span>{{ product.name[:1]|upper }}</span><strong>{{ product.name }}</strong></div></td>
+          <td>{{ product.purchases }}</td>
+          <td>{{ product.quantity|quantity }}</td>
+          <td>{{ product.average_line_price|currency }}</td>
+          <td><strong>{{ product.spend|currency }}</strong></td>
+          <td>{{ product.latest_purchase.strftime('%d %b %Y') if product.latest_purchase else 'Unknown' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><span>⌕</span><h3>{{ 'No matching products' if query else 'No products yet' }}</h3><p>{{ 'Try a different search.' if query else 'Products appear after you save a scanned receipt.' }}</p></div>
+  {% endif %}
+</section>
+{% endblock %}

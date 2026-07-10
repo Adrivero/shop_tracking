@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Scan result · Shop Tracking{% endblock %}
+{% block content %}
+<section class="page-heading heading-row reveal">
+  <div><p class="eyebrow">Scan complete</p><h1>Receipt <span>decoded.</span></h1><p class="lead">{{ filename }} · {{ ('Already saved as receipt #' if saved and saved.was_duplicate|default(false) else 'Saved as receipt #') ~ saved.id if saved else 'Preview only — not saved' }}</p></div>
+  <div class="heading-actions"><a class="button button-secondary" href="{{ url_for('scan') }}">Scan another</a>{% if saved %}<a class="button button-primary" href="{{ url_for('receipt_detail', receipt_id=saved.id) }}">Open receipt</a>{% endif %}</div>
+</section>
+<section class="notice-panel reveal reveal-delay-1"><span>↧</span><div><strong>Image archived</strong><p>Saved locally as <code>data/raw/{{ archived_filename }}</code>.</p></div></section>
+<section class="scan-summary reveal reveal-delay-1">
+  <article><span>Store</span><strong>{{ parsed.store_name or 'Unknown' }}</strong></article>
+  <article><span>Date</span><strong>{{ parsed.receipt_date or 'Unknown' }}</strong></article>
+  <article><span>Products</span><strong>{{ parsed.items|length }}</strong></article>
+  <article class="accent"><span>Total</span><strong>{{ parsed.total|currency }}</strong></article>
+</section>
+<section class="panel table-panel reveal reveal-delay-2">
+  <div class="panel-heading"><div><p class="eyebrow">Recognized products</p><h2>Check the OCR result</h2></div></div>
+  <div class="responsive-table"><table><thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Weight</th><th>Total</th></tr></thead><tbody>
+  {% for item in parsed.items %}<tr><td><strong>{{ item.product_name }}</strong></td><td>{{ item.quantity|quantity }}</td><td>{{ item.unit_price|currency if item.unit_price is not none else '—' }}</td><td>{{ (item.weight_kg|quantity ~ ' kg') if item.weight_kg is not none else '—' }}</td><td><strong>{{ item.price|currency }}</strong></td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

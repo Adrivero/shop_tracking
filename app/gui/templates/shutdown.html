@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Stopping · Shop Tracking{% endblock %}
+{% block content %}
+<section class="page-heading centered reveal">
+  <p class="eyebrow">Shutdown requested</p>
+  <h1>Stopping the <span>app.</span></h1>
+  <p class="lead">The dashboard process is exiting now. If you are running with Docker Compose, the container should move to an exited/stopped state.</p>
+</section>
+<section class="notice-panel reveal reveal-delay-1"><span>⏻</span><div><strong>You can close this tab</strong><p>Start it again later with <code>docker compose up --build dashboard</code>.</p></div></section>
+{% endblock %}

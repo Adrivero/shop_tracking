@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Overview · Shop Tracking{% endblock %}
+{% block content %}
+<section class="page-heading heading-row reveal">
+  <div>
+    <p class="eyebrow">Spending intelligence</p>
+    <h1>Your shopping, <span>finally legible.</span></h1>
+    <p class="lead">A clear view of every basket, product, and euro captured from your receipts.</p>
+  </div>
+  <a class="button button-primary" href="{{ url_for('scan') }}">＋ Add receipt</a>
+</section>
+
+<section class="metric-grid reveal reveal-delay-1" aria-label="Key statistics">
+  <article class="metric-card metric-accent">
+    <div class="metric-top"><span>Total spend</span><span class="metric-icon">↗</span></div>
+    <strong>{{ stats.total_spend|currency }}</strong>
+    <small>Across {{ stats.receipt_count }} saved {{ 'receipt' if stats.receipt_count == 1 else 'receipts' }}</small>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Average basket</span><span class="metric-icon">◫</span></div>
+    <strong>{{ stats.average_basket|currency }}</strong>
+    <small>Average total per shopping trip</small>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Products tracked</span><span class="metric-icon">◇</span></div>
+    <strong>{{ stats.unique_products }}</strong>
+    <small>{{ stats.item_count }} individual product lines</small>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Stores visited</span><span class="metric-icon">⌖</span></div>
+    <strong>{{ stats.stores|length }}</strong>
+    <small>Based on recognized store names</small>
+  </article>
+</section>
+
+<section class="dashboard-grid reveal reveal-delay-2">
+  <article class="panel chart-panel">
+    <div class="panel-heading">
+      <div><p class="eyebrow">Last 12 active months</p><h2>Spending rhythm</h2></div>
+      <span class="panel-pill">{{ stats.total_spend|currency }} total</span>
+    </div>
+    {% if stats.trend %}
+    <div class="bar-chart" aria-label="Monthly spending chart">
+      {% for point in stats.trend %}
+      <div class="bar-column" title="{{ point.label }}: {{ point.spend|currency }}">
+        <div class="bar-value">{{ point.spend|currency }}</div>
+        <div class="bar-track"><div class="bar-fill" style="--bar-height: {{ ((point.spend / trend_peak * 100) if trend_peak else 0)|round }}%"></div></div>
+        <span>{{ point.label[:3] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <div class="empty-state compact"><span>↗</span><h3>Your trend starts here</h3><p>Save a receipt to reveal monthly spending.</p></div>
+    {% endif %}
+  </article>
+
+  <article class="panel stores-panel">
+    <div class="panel-heading"><div><p class="eyebrow">Distribution</p><h2>Favorite stores</h2></div></div>
+    {% if stats.stores %}
+    <div class="store-list">
+      {% for store in stats.stores[:5] %}
+      <div class="store-row">
+        <div class="store-avatar">{{ store.name[:1]|upper }}</div>
+        <div class="store-main">
+          <div><strong>{{ store.name }}</strong><span>{{ store.receipts }} trips</span></div>
+          <div class="progress"><i style="width: {{ store.share }}%"></i></div>
+        </div>
+        <strong>{{ store.spend|currency }}</strong>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <div class="empty-state compact"><span>⌖</span><h3>No stores yet</h3><p>They’ll appear as receipts are saved.</p></div>
+    {% endif %}
+  </article>
+</section>
+
+<section class="dashboard-grid lower-grid reveal reveal-delay-3">
+  <article class="panel">
+    <div class="panel-heading">
+      <div><p class="eyebrow">Product intelligence</p><h2>Biggest basket drivers</h2></div>
+      <a class="text-link" href="{{ url_for('products') }}">View all →</a>
+    </div>
+    {% if stats.products %}
+    <div class="rank-list">
+      {% for product in stats.products[:6] %}
+      <div class="rank-row">
+        <span class="rank-number">{{ '%02d'|format(loop.index) }}</span>
+        <div><strong>{{ product.name }}</strong><small>{{ product.purchases }} purchases · {{ product.quantity|quantity }} units</small></div>
+        <strong>{{ product.spend|currency }}</strong>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <div class="empty-state"><span>◇</span><h3>No products to rank</h3><p>Scan and save your first receipt.</p><a href="{{ url_for('scan') }}" class="button button-secondary">Scan now</a></div>
+    {% endif %}
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <div><p class="eyebrow">Latest activity</p><h2>Recent receipts</h2></div>
+      <a class="text-link" href="{{ url_for('receipts') }}">History →</a>
+    </div>
+    {% if stats.recent_receipts %}
+    <div class="receipt-list">
+      {% for receipt in stats.recent_receipts[:5] %}
+      <a class="receipt-row" href="{{ url_for('receipt_detail', receipt_id=receipt.id) }}">
+        <div class="receipt-date"><strong>{{ receipt.purchased_at.strftime('%d') if receipt.purchased_at else '—' }}</strong><span>{{ receipt.purchased_at.strftime('%b') if receipt.purchased_at else 'N/A' }}</span></div>
+        <div><strong>{{ receipt.store_name or 'Unknown store' }}</strong><small>{{ receipt.items|length }} items · #{{ receipt.id }}</small></div>
+        <strong>{{ receipt.total|currency }}</strong><span class="row-arrow">›</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+      <div class="empty-state"><span>≡</span><h3>Nothing saved yet</h3><p>Your receipt history will live here.</p></div>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

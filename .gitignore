@@ -102,6 +102,8 @@ poetry.lock
 # Pipenv
 Pipfile.lock
 
+explanation.md
+
 # pdm
 .pdm.toml
 .pdm-python
@@ -124,3 +126,8 @@ celerybeat.pid
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local receipt data, databases, and backups
+/data/
+/tests/data_tests/
+/backups/

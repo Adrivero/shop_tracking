@@ -1,0 +1,13 @@
+services:
+  dashboard:
+    container_name: shop-tracking
+    build:
+      context: .
+    image: shop-tracking:local
+    command: ["web", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      DATABASE_URL: sqlite:////var/lib/shop-tracking/shop_tracking.db
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/var/lib/shop-tracking
