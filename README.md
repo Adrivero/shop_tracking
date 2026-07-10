@@ -16,7 +16,7 @@ docker build -t shop-tracking:local .
 Then create the container once:
 
 ```bash
-docker run --detach \
+docker run \
   --name shop-tracking \
   --publish 127.0.0.1:8000:8000 \
   --env DATABASE_URL=sqlite:////var/lib/shop-tracking/shop_tracking.db \
