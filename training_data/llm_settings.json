@@ -1,0 +1,6 @@
+{
+  "enabled_by_default": true,
+  "model": "llama3.1:8b",
+  "base_url": "http://host.docker.internal:11434",
+  "timeout_seconds": 20.0
+}
