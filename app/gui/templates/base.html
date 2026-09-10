@@ -31,6 +31,9 @@
         <a class="nav-link {{ 'active' if request.endpoint in ('receipts', 'receipt_detail') }}" href="{{ url_for('receipts') }}">
           <span class="nav-icon">≡</span><span>Receipts</span>
         </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'settings' }}" href="{{ url_for('settings') }}">
+          <span class="nav-icon">⚙</span><span>Settings</span>
+        </a>
       </nav>
 
       <div class="sidebar-bottom">

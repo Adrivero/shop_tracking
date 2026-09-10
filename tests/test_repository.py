@@ -73,6 +73,25 @@ def test_save_receipt_returns_existing_row_for_duplicate(tmp_path):
     assert repository.count_receipts() == 1
 
 
+def test_find_by_date_and_total_matches_same_day_and_price(tmp_path):
+    repository, _engine = make_repository(tmp_path)
+    existing = repository.save_receipt(sample_receipt())
+    scanned = sample_receipt()
+    scanned.store_name = "OCR STORE"
+    scanned.receipt_time = "22:15"
+    scanned.items[0] = ParsedReceiptItem(
+        product_name="DIFFERENT OCR PRODUCT",
+        quantity=1,
+        unit_price=1.90,
+        price=1.90,
+    )
+
+    match = repository.find_by_date_and_total(scanned)
+
+    assert match is not None
+    assert match.id == existing.id
+
+
 def test_save_receipt_allows_same_header_with_different_items(tmp_path):
     repository, _engine = make_repository(tmp_path)
     changed = sample_receipt()

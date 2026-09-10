@@ -1,0 +1,6 @@
+* text=auto
+
+# Docker entrypoints are executed inside Linux containers and must keep LF
+# endings even when the repo is cloned from Windows.
+docker/*.sh text eol=lf
+*.sh text eol=lf

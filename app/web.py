@@ -16,7 +16,14 @@ from werkzeug.utils import secure_filename
 from app.analytics import dashboard_stats
 from app.db.config import PROJECT_ROOT
 from app.db import ReceiptRepository, create_db_engine
-from app.scan_one import scan_receipt
+from app.scan_one import scan_receipt_result
+from app.tools.llm import (
+    DEFAULT_BASE_URL,
+    DEFAULT_MODEL,
+    llm_settings_from_form,
+    load_llm_settings,
+    save_llm_settings,
+)
 from app.tools.parser import ParsedReceipt, ReceiptItem as ParsedReceiptItem
 
 
@@ -134,6 +141,13 @@ def _default_receipt_image_dir(engine: Engine) -> Path:
     return PROJECT_ROOT / "data" / "raw"
 
 
+def _default_llm_settings_path(engine: Engine) -> Path:
+    url = make_url(str(engine.url))
+    if url.get_backend_name() == "sqlite" and url.database not in (None, ":memory:"):
+        return Path(url.database).expanduser().resolve().parent / "llm_settings.json"
+    return PROJECT_ROOT / "data" / "llm_settings.json"
+
+
 def _saved_upload_path(directory: Path, original_filename: str) -> Path:
     safe_name = secure_filename(original_filename)
     suffix = Path(safe_name).suffix.lower()
@@ -152,6 +166,8 @@ def _scan_upload(
     image_directory: Path,
     *,
     save: bool,
+    use_llm: bool,
+    llm_settings,
     engine: Engine,
 ) -> dict[str, Any]:
     filename = secure_filename(upload.filename or "")
@@ -164,15 +180,29 @@ def _scan_upload(
 
     image_path = _saved_upload_path(image_directory, filename)
     upload.save(image_path)
-    parsed = scan_receipt(image_path)
+    scan_result = scan_receipt_result(
+        image_path,
+        use_llm=use_llm,
+        llm_settings=llm_settings,
+    )
+    parsed = scan_result.receipt
+    repository = ReceiptRepository(engine)
+    duplicate_match = repository.find_by_date_and_total(parsed)
     saved = None
-    if save:
-        saved = ReceiptRepository(engine).save_receipt(parsed)
+    if save and duplicate_match is not None:
+        duplicate_match.was_duplicate = True
+        saved = duplicate_match
+    elif save:
+        saved = repository.save_receipt(parsed)
+        if getattr(saved, "was_duplicate", False):
+            duplicate_match = saved
     return {
         "filename": filename,
         "archived_filename": image_path.name,
         "parsed": parsed,
         "saved": saved,
+        "duplicate_match": duplicate_match,
+        "llm": scan_result.llm,
         "error": None,
     }
 
@@ -186,6 +216,20 @@ def create_app(engine: Engine | None = None) -> Flask:
     app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
     app.config["ENGINE"] = engine or create_db_engine()
     app.config["RECEIPT_IMAGE_DIR"] = _default_receipt_image_dir(app.config["ENGINE"])
+    app.config["LLM_SETTINGS_PATH"] = _default_llm_settings_path(app.config["ENGINE"])
+
+    def current_llm_settings():
+        return load_llm_settings(app.config["LLM_SETTINGS_PATH"])
+
+    def llm_control_state() -> dict[str, object]:
+        settings = current_llm_settings()
+        return {
+            "configured": settings.configured,
+            "enabled_by_default": settings.enabled_by_default and settings.configured,
+            "model": settings.model,
+            "base_url": settings.base_url,
+            "timeout_seconds": settings.timeout_seconds,
+        }
 
     @app.template_filter("currency")
     def format_currency(value: Decimal | float | None) -> str:
@@ -252,6 +296,40 @@ def create_app(engine: Engine | None = None) -> Flask:
             updated=request.args.get("updated") == "1",
         )
 
+    @app.route("/settings", methods=["GET", "POST"])
+    def settings():
+        if request.method == "GET":
+            saved = request.args.get("saved") == "1"
+            current_settings = current_llm_settings()
+            if not current_settings.configured:
+                current_settings = llm_settings_from_form(
+                    enabled_by_default=current_settings.enabled_by_default,
+                    model=DEFAULT_MODEL,
+                    base_url=current_settings.base_url or DEFAULT_BASE_URL,
+                    timeout_seconds=str(current_settings.timeout_seconds),
+                )
+            return render_template(
+                "settings.html",
+                settings=current_settings,
+                saved=saved,
+            )
+
+        try:
+            updated_settings = llm_settings_from_form(
+                enabled_by_default=request.form.get("llm_enabled") == "yes",
+                model=request.form.get("llm_model", ""),
+                base_url=request.form.get("llm_base_url", ""),
+                timeout_seconds=request.form.get("llm_timeout_seconds", "20"),
+            )
+            save_llm_settings(app.config["LLM_SETTINGS_PATH"], updated_settings)
+        except (OSError, ValueError) as error:
+            return render_template(
+                "settings.html",
+                settings=current_llm_settings(),
+                error=str(error),
+            ), 400
+        return redirect(url_for("settings", saved="1"))
+
     @app.route("/receipts/<int:receipt_id>/edit", methods=["GET", "POST"])
     def receipt_edit(receipt_id: int):
         repository = ReceiptRepository(app.config["ENGINE"])
@@ -296,7 +374,7 @@ def create_app(engine: Engine | None = None) -> Flask:
     @app.route("/scan", methods=["GET", "POST"])
     def scan():
         if request.method == "GET":
-            return render_template("scan.html")
+            return render_template("scan.html", llm=llm_control_state())
 
         uploads = [
             upload
@@ -304,11 +382,17 @@ def create_app(engine: Engine | None = None) -> Flask:
             if upload is not None and upload.filename
         ]
         if not uploads:
-            return render_template("scan.html", error="Choose at least one receipt image first."), 400
+            return render_template(
+                "scan.html",
+                error="Choose at least one receipt image first.",
+                llm=llm_control_state(),
+            ), 400
 
         image_directory = Path(app.config["RECEIPT_IMAGE_DIR"])
         image_directory.mkdir(parents=True, exist_ok=True)
         save = request.form.get("save") == "yes"
+        llm_settings = current_llm_settings()
+        use_llm = request.form.get("use_llm") == "yes" and llm_settings.configured
         results = []
         all_unsupported = True
         try:
@@ -318,6 +402,8 @@ def create_app(engine: Engine | None = None) -> Flask:
                         upload,
                         image_directory,
                         save=save,
+                        use_llm=use_llm,
+                        llm_settings=llm_settings,
                         engine=app.config["ENGINE"],
                     )
                     all_unsupported = all_unsupported and bool(result["error"])
@@ -338,13 +424,17 @@ def create_app(engine: Engine | None = None) -> Flask:
                     "scan_result.html",
                     parsed=result["parsed"],
                     saved=result["saved"],
+                    duplicate_match=result["duplicate_match"],
                     filename=result["filename"],
                     archived_filename=result["archived_filename"],
+                    llm=result["llm"],
                 )
 
             return render_template("scan_bulk_result.html", results=results, save=save)
         except (OSError, ValueError, RuntimeError) as error:
-            return render_template("scan.html", error=str(error)), 422
+            return render_template(
+                "scan.html", error=str(error), llm=llm_control_state()
+            ), 422
 
     @app.errorhandler(404)
     def not_found(_error):

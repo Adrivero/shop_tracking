@@ -7,29 +7,21 @@ and SQLite; no cloud account or remote server is required.
 ## Start the dashboard
 
 Install Docker Desktop (macOS or Windows), or Docker Engine (Linux). From the
-project directory, build the image:
+project directory, start the app with Docker Compose:
 
 ```bash
-docker build -t shop-tracking:local .
+docker compose up --build
 ```
 
-Then create the container once:
-
-```bash
-docker run \
-  --name shop-tracking \
-  --publish 127.0.0.1:8000:8000 \
-  --env DATABASE_URL=sqlite:////var/lib/shop-tracking/shop_tracking.db \
-  --volume "$PWD/data:/var/lib/shop-tracking" \
-  shop-tracking:local
-```
+The command is the same in PowerShell, Command Prompt, macOS shells, and Linux
+shells. It avoids shell-specific volume syntax such as `"$PWD/data"`.
 
 Open [http://localhost:8000](http://localhost:8000). The port is bound to
 `127.0.0.1`, so the dashboard is available only from this computer.
 
 ### Manage it from Docker Desktop
 
-After creating the container, Docker Desktop should show:
+After starting the app, Docker Desktop should show:
 
 - one image: `shop-tracking:local`;
 - one container: `shop-tracking`.
@@ -38,8 +30,8 @@ Use Docker Desktop's start/stop buttons from then on. If you prefer the terminal
 the equivalent commands are:
 
 ```bash
-docker start shop-tracking
-docker stop shop-tracking
+docker compose up
+docker compose stop
 ```
 
 The UI provides:
@@ -54,6 +46,23 @@ The UI provides:
 
 Use the **Stop app** button in the dashboard or Docker Desktop's stop button.
 Starting and stopping the dashboard does not remove its data.
+
+## Optional local LLM corrections
+
+The scan screen includes a **Local LLM corrections** switch. It stays disabled
+until a local model is configured. With Ollama running on the host, open
+**Settings** in the sidebar and use:
+
+- model: `llama3.1:8b`;
+- base URL: `http://host.docker.internal:11434`;
+- timeout: `20`.
+
+Save the settings, then enable **Local LLM corrections** on the scan screen.
+
+You can still preconfigure startup defaults with `OCR_LLM_MODEL`,
+`OCR_LLM_ENABLED`, `OCR_LLM_BASE_URL`, and `OCR_LLM_TIMEOUT_SECONDS`. The LLM is
+used only after OCR to correct the structured receipt result; if the model is
+unavailable or returns invalid data, the app keeps the deterministic OCR result.
 
 ## Local data
 
@@ -74,15 +83,9 @@ against disk failure.
 Place images in `data/raw/` and run:
 
 ```bash
-docker run --rm \
-  --env DATABASE_URL=sqlite:////var/lib/shop-tracking/shop_tracking.db \
-  --volume "$PWD/data:/var/lib/shop-tracking" \
-  shop-tracking:local /var/lib/shop-tracking/raw/receipt_mercadona_01.jpeg
+docker compose run --rm dashboard /var/lib/shop-tracking/raw/receipt_mercadona_01.jpeg
 
-docker run --rm \
-  --env DATABASE_URL=sqlite:////var/lib/shop-tracking/shop_tracking.db \
-  --volume "$PWD/data:/var/lib/shop-tracking" \
-  shop-tracking:local /var/lib/shop-tracking/raw/receipt_mercadona_01.jpeg --save
+docker compose run --rm dashboard /var/lib/shop-tracking/raw/receipt_mercadona_01.jpeg --save
 ```
 
 The first command previews parsed data. The second saves it to the same SQLite

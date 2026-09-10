@@ -3,6 +3,8 @@ from io import BytesIO
 
 from app.analytics import dashboard_stats
 from app.db import Base, ReceiptRepository, create_db_engine
+from app.scan_one import ScanReceiptResult
+from app.tools.llm import LlmCorrection
 from app.tools.parser import ParsedReceipt, ReceiptItem
 from app.web import create_app
 
@@ -24,6 +26,20 @@ def make_engine(tmp_path):
     engine = create_db_engine(f"sqlite:///{tmp_path / 'dashboard.db'}")
     Base.metadata.create_all(engine)
     return engine
+
+
+def sample_scan_result(
+    receipt: ParsedReceipt | None = None, *, llm_status: str = "off"
+) -> ScanReceiptResult:
+    receipt = receipt or sample_receipt()
+    return ScanReceiptResult(
+        receipt=receipt,
+        llm=LlmCorrection(
+            receipt=receipt,
+            status=llm_status,
+            message=f"LLM {llm_status}",
+        ),
+    )
 
 
 def test_dashboard_statistics_aggregate_receipts_and_products(tmp_path):
@@ -59,6 +75,7 @@ def test_dashboard_pages_render_with_saved_data(tmp_path):
         f"/receipts/{receipt.id}",
         f"/receipts/{receipt.id}/edit",
         "/scan",
+        "/settings",
     ):
         response = client.get(path)
         assert response.status_code == 200, path
@@ -97,12 +114,14 @@ def test_scan_upload_can_save_to_dashboard_database_and_raw_folder(tmp_path, mon
     engine = make_engine(tmp_path)
     scanned_paths = []
 
-    def fake_scan(path):
+    def fake_scan(path, *, use_llm=False, llm_settings=None):
         scanned_paths.append(path)
         assert path.is_file()
-        return sample_receipt()
+        assert use_llm is False
+        assert llm_settings is not None
+        return sample_scan_result()
 
-    monkeypatch.setattr("app.web.scan_receipt", fake_scan)
+    monkeypatch.setattr("app.web.scan_receipt_result", fake_scan)
     client = create_app(engine).test_client()
 
     response = client.post(
@@ -124,13 +143,18 @@ def test_bulk_scan_upload_saves_each_valid_receipt(tmp_path, monkeypatch):
     engine = make_engine(tmp_path)
     scanned_paths = []
 
-    def fake_scan(path):
+    def fake_scan(path, *, use_llm=False, llm_settings=None):
         scanned_paths.append(path)
         receipt = sample_receipt()
         receipt.receipt_time = "12:30" if path.name.endswith("first.jpg") else "12:45"
-        return receipt
+        receipt.total = 5.50 if path.name.endswith("first.jpg") else 6.50
+        receipt.items[0].price = 4.50 if path.name.endswith("second.jpg") else 3.50
+        receipt.items[0].unit_price = receipt.items[0].price
+        assert use_llm is False
+        assert llm_settings is not None
+        return sample_scan_result(receipt)
 
-    monkeypatch.setattr("app.web.scan_receipt", fake_scan)
+    monkeypatch.setattr("app.web.scan_receipt_result", fake_scan)
     client = create_app(engine).test_client()
 
     response = client.post(
@@ -154,11 +178,101 @@ def test_bulk_scan_upload_saves_each_valid_receipt(tmp_path, monkeypatch):
     assert {path.read_bytes() for path in scanned_paths} == {b"first", b"second"}
 
 
+def test_scan_upload_can_request_local_llm_correction(tmp_path, monkeypatch):
+    engine = make_engine(tmp_path)
+    requested = []
+
+    def fake_scan(path, *, use_llm=False, llm_settings=None):
+        requested.append(use_llm)
+        assert llm_settings is not None
+        assert llm_settings.model == "llama3.1:8b"
+        return sample_scan_result(llm_status="applied")
+
+    monkeypatch.setattr("app.web.scan_receipt_result", fake_scan)
+    app = create_app(engine)
+    client = app.test_client()
+
+    response = client.post(
+        "/settings",
+        data={
+            "llm_model": "llama3.1:8b",
+            "llm_base_url": "http://host.docker.internal:11434",
+            "llm_timeout_seconds": "20",
+            "llm_enabled": "yes",
+        },
+    )
+
+    assert response.status_code == 302
+
+    response = client.post(
+        "/scan",
+        data={"receipt": (BytesIO(b"image"), "receipt.jpg"), "use_llm": "yes"},
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    assert requested == [True]
+    assert b"Local LLM applied" in response.data
+
+
+def test_scan_upload_notifies_when_date_and_total_already_exist(tmp_path, monkeypatch):
+    engine = make_engine(tmp_path)
+    existing = ReceiptRepository(engine).save_receipt(sample_receipt())
+
+    def fake_scan(path, *, use_llm=False, llm_settings=None):
+        parsed = sample_receipt()
+        parsed.store_name = "OCR STORE"
+        parsed.receipt_time = "18:45"
+        return sample_scan_result(parsed)
+
+    monkeypatch.setattr("app.web.scan_receipt_result", fake_scan)
+    client = create_app(engine).test_client()
+
+    response = client.post(
+        "/scan",
+        data={"receipt": (BytesIO(b"image"), "receipt.jpg"), "save": "yes"},
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    assert b"This receipt already exists" in response.data
+    assert f"receipt #{existing.id}".encode() in response.data
+    assert ReceiptRepository(engine).count_receipts() == 1
+
+
+def test_settings_page_saves_local_llm_configuration(tmp_path):
+    app = create_app(make_engine(tmp_path))
+    client = app.test_client()
+
+    response = client.post(
+        "/settings",
+        data={
+            "llm_model": "llama3.1:8b",
+            "llm_base_url": "http://host.docker.internal:11434",
+            "llm_timeout_seconds": "30",
+            "llm_enabled": "yes",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Settings saved" in response.data
+    assert b"llama3.1:8b" in response.data
+    assert (tmp_path / "llm_settings.json").is_file()
+
+    scan_page = client.get("/scan")
+    assert b"llama3.1:8b" in scan_page.data
+    assert b'name="use_llm"' in scan_page.data
+
+
 def test_bulk_scan_upload_reports_invalid_files_without_stopping_batch(
     tmp_path, monkeypatch
 ):
     engine = make_engine(tmp_path)
-    monkeypatch.setattr("app.web.scan_receipt", lambda _path: sample_receipt())
+    monkeypatch.setattr(
+        "app.web.scan_receipt_result",
+        lambda _path, use_llm=False, llm_settings=None: sample_scan_result(),
+    )
     client = create_app(engine).test_client()
 
     response = client.post(

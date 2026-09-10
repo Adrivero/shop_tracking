@@ -18,14 +18,15 @@
 
 <section class="panel table-panel reveal reveal-delay-2">
   <div class="panel-heading"><div><p class="eyebrow">Batch details</p><h2>Each ticket result</h2></div></div>
-  <div class="responsive-table"><table><thead><tr><th>File</th><th>Status</th><th>Store</th><th>Date</th><th>Total</th><th>Image</th></tr></thead><tbody>
+  <div class="responsive-table"><table><thead><tr><th>File</th><th>Status</th><th>AI</th><th>Store</th><th>Date</th><th>Total</th><th>Image</th></tr></thead><tbody>
   {% for result in results %}
     {% if result.error %}
-      <tr><td><strong>{{ result.filename }}</strong></td><td>{{ result.error }}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td><strong>{{ result.filename }}</strong></td><td>{{ result.error }}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
     {% else %}
       <tr>
         <td><strong>{{ result.filename }}</strong></td>
-        <td>{% if result.saved %}{% if result.saved.was_duplicate|default(false) %}Already saved #{{ result.saved.id }}{% else %}Saved #{{ result.saved.id }}{% endif %}{% else %}Preview only{% endif %}</td>
+        <td>{% if result.duplicate_match %}Already exists #{{ result.duplicate_match.id }}{% elif result.saved %}{% if result.saved.was_duplicate|default(false) %}Already saved #{{ result.saved.id }}{% else %}Saved #{{ result.saved.id }}{% endif %}{% else %}Preview only{% endif %}</td>
+        <td>{{ result.llm.status if result.llm else 'off' }}</td>
         <td>{{ result.parsed.store_name or 'Unknown' }}</td>
         <td>{{ result.parsed.receipt_date or 'Unknown' }}</td>
         <td>{{ result.parsed.total|currency }}</td>

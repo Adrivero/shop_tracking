@@ -7,6 +7,12 @@ services:
     command: ["web", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       DATABASE_URL: sqlite:////var/lib/shop-tracking/shop_tracking.db
+      OCR_LLM_BASE_URL: ${OCR_LLM_BASE_URL:-http://host.docker.internal:11434}
+      OCR_LLM_ENABLED: ${OCR_LLM_ENABLED:-false}
+      OCR_LLM_MODEL: ${OCR_LLM_MODEL:-}
+      OCR_LLM_TIMEOUT_SECONDS: ${OCR_LLM_TIMEOUT_SECONDS:-20}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:8000:8000"
     volumes:

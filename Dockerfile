@@ -32,6 +32,7 @@ COPY --chown=appuser:appuser app ./app
 COPY --chown=appuser:appuser migrations ./migrations
 COPY --chown=appuser:appuser alembic.ini ./
 COPY --chown=appuser:appuser --chmod=755 docker/entrypoint.sh /usr/local/bin/shop-tracking
+RUN sed -i 's/\r$//' /usr/local/bin/shop-tracking
 
 USER appuser
 

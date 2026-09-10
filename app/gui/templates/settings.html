@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Settings · Shop Tracking{% endblock %}
+{% block content %}
+<section class="page-heading heading-row reveal">
+  <div><p class="eyebrow">Configuration</p><h1>OCR assistance.</h1><p class="lead">Configure the local model used to correct receipt text after Tesseract OCR.</p></div>
+  <div class="heading-actions"><a class="button button-secondary" href="{{ url_for('scan') }}">Back to scan</a></div>
+</section>
+
+{% if saved %}<div class="success-banner reveal"><span>✓</span><div><strong>Settings saved</strong><p>The scan screen will use this configuration immediately.</p></div></div>{% endif %}
+{% if error %}<div class="error-banner reveal"><span>!</span><div><strong>Couldn’t save settings</strong><p>{{ error }}</p></div></div>{% endif %}
+
+<form class="panel settings-form reveal reveal-delay-1" method="post">
+  <div class="panel-heading">
+    <div><p class="eyebrow">Local LLM</p><h2>Ollama correction model</h2></div>
+  </div>
+  <div class="field-grid">
+    <label class="field field-wide"><span>Model</span><input name="llm_model" value="{{ settings.model or '' }}" placeholder="llama3.1:8b" required></label>
+    <label class="field field-wide"><span>Base URL</span><input name="llm_base_url" value="{{ settings.base_url }}" placeholder="http://host.docker.internal:11434" required></label>
+    <label class="field"><span>Timeout seconds</span><input name="llm_timeout_seconds" value="{{ settings.timeout_seconds|int if settings.timeout_seconds == settings.timeout_seconds|int else settings.timeout_seconds }}" inputmode="decimal" required></label>
+    <div class="settings-toggle">
+      <div><strong>Enable by default</strong><small>New scans start with local corrections switched on.</small></div>
+      <label class="switch"><input type="checkbox" name="llm_enabled" value="yes" {% if settings.enabled_by_default %}checked{% endif %}><span></span></label>
+    </div>
+  </div>
+  <div class="settings-actions">
+    <span>For your Ollama model, use <code>llama3.1:8b</code>.</span>
+    <button class="button button-primary" type="submit">Save settings</button>
+  </div>
+</form>
+{% endblock %}

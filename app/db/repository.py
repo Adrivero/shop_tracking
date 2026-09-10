@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import Engine, delete, or_, select
@@ -92,6 +92,28 @@ class ReceiptRepository:
             session.add(receipt)
             session.flush()
         return receipt
+
+    def find_by_date_and_total(self, parsed: ParsedReceipt) -> Receipt | None:
+        purchased_at = _purchase_datetime(parsed.receipt_date, parsed.receipt_time)
+        total = _decimal(parsed.total, MONEY_QUANTUM)
+        if purchased_at is None or total is None:
+            return None
+
+        day_start = purchased_at.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        statement = (
+            select(Receipt)
+            .options(selectinload(Receipt.items))
+            .where(
+                Receipt.total == total,
+                Receipt.purchased_at >= day_start,
+                Receipt.purchased_at < day_end,
+            )
+            .order_by(Receipt.id)
+            .limit(1)
+        )
+        with self._session_factory() as session:
+            return session.scalar(statement)
 
     @staticmethod
     def _item_models(parsed: ParsedReceipt) -> list[ReceiptItem]:

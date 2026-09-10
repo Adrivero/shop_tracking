@@ -1,5 +1,6 @@
 import argparse
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 # Keep `python app/scan_one.py` working as well as `python -m app.scan_one`.
@@ -7,12 +8,19 @@ if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.db import Receipt, ReceiptRepository, create_db_engine
+from app.tools.llm import LlmCorrection, LlmSettings, correct_receipt_with_llm
 from app.tools.ocr import extract_text_candidates, extract_text_from_image
 from app.tools.parser import ParsedReceipt, ReceiptItem, parse_receipt_text
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_IMAGE_PATH = PROJECT_ROOT / "data" / "raw" / "receipt_mercadona_01.jpeg"
+
+
+@dataclass(frozen=True)
+class ScanReceiptResult:
+    receipt: ParsedReceipt
+    llm: LlmCorrection
 
 
 def _money_cents(value: float | None) -> int | None:
@@ -127,8 +135,13 @@ def _validate_receipt_totals(receipt: ParsedReceipt) -> None:
         )
 
 
-def scan_receipt(image_path: str | Path) -> ParsedReceipt:
-    """Run OCR on an image and return its database-ready receipt data."""
+def scan_receipt_result(
+    image_path: str | Path,
+    *,
+    use_llm: bool = False,
+    llm_settings: LlmSettings | None = None,
+) -> ScanReceiptResult:
+    """Run OCR on an image and return receipt data plus scan metadata."""
     image_path = Path(image_path)
     if not image_path.is_file():
         raise FileNotFoundError(f"Image file not found: {image_path}")
@@ -142,7 +155,35 @@ def scan_receipt(image_path: str | Path) -> ParsedReceipt:
     candidates = [parse_receipt_text(raw_text) for raw_text in raw_texts]
     receipt = _merge_receipts(candidates)
     _validate_receipt_totals(receipt)
-    return receipt
+
+    if use_llm:
+        llm = correct_receipt_with_llm(raw_texts, receipt, settings=llm_settings)
+        if llm.status == "applied":
+            _validate_receipt_totals(llm.receipt)
+        return ScanReceiptResult(receipt=llm.receipt, llm=llm)
+
+    return ScanReceiptResult(
+        receipt=receipt,
+        llm=LlmCorrection(
+            receipt=receipt,
+            status="off",
+            message="Local correction was not requested.",
+        ),
+    )
+
+
+def scan_receipt(
+    image_path: str | Path,
+    *,
+    use_llm: bool = False,
+    llm_settings: LlmSettings | None = None,
+) -> ParsedReceipt:
+    """Run OCR on an image and return its database-ready receipt data."""
+    return scan_receipt_result(
+        image_path,
+        use_llm=use_llm,
+        llm_settings=llm_settings,
+    ).receipt
 
 
 def scan_and_save_receipt(

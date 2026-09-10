@@ -6,6 +6,12 @@
   <div class="heading-actions"><a class="button button-secondary" href="{{ url_for('scan') }}">Scan another</a>{% if saved %}<a class="button button-primary" href="{{ url_for('receipt_detail', receipt_id=saved.id) }}">Open receipt</a>{% endif %}</div>
 </section>
 <section class="notice-panel reveal reveal-delay-1"><span>↧</span><div><strong>Image archived</strong><p>Saved locally as <code>data/raw/{{ archived_filename }}</code>.</p></div></section>
+{% if duplicate_match %}
+<section class="notice-panel duplicate-status reveal reveal-delay-1"><span>!</span><div><strong>This receipt already exists</strong><p>A saved receipt with the same date and total is receipt #{{ duplicate_match.id }}.</p></div></section>
+{% endif %}
+{% if llm and llm.status != "off" %}
+<section class="notice-panel llm-status llm-status-{{ llm.status }} reveal reveal-delay-1"><span>AI</span><div><strong>Local LLM {{ llm.status }}</strong><p>{{ llm.message }}</p></div></section>
+{% endif %}
 <section class="scan-summary reveal reveal-delay-1">
   <article><span>Store</span><strong>{{ parsed.store_name or 'Unknown' }}</strong></article>
   <article><span>Date</span><strong>{{ parsed.receipt_date or 'Unknown' }}</strong></article>
